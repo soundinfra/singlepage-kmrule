@@ -2,10 +2,16 @@
 This repository is an example of a single web page, powered by
 [Sound//Infra](https://soundinfra.com).
 
+<style>
+.wordmark {
+  font-family: monospace;
+  color: #034959;
+}
+</style>
 [kmrule.com](https://kmrule.com) has some images, text, CSS, and even some
 JavaScript to make it interactive. But the main thing that this repository shows
 is just how easy it is to make changes to a web page that is powered by
-<span style="font-family: monospace">Sound//Infra</span>.
+<span class="wordmark">Sound//Infra</span>.
 
 The web is made up of *resources*, each with
 a [URL](https://en.wikipedia.org/wiki/URL), or web address,
