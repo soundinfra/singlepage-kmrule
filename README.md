@@ -17,6 +17,7 @@ To upload, or publish a resource to your domain, you just need to do a
 `HTTP PUT` request. One way to do this is with the `curl` command, which is
 installed on most systems:
 ```
+me@host> SOUNDINFRA_TOKEN=[... your secret token ...]
 me@host> curl -X PUT  \
  > -H "Authorization: Bearer $SOUNDINFRA_TOKEN" \
  > -H "Content-Type:" \
@@ -28,19 +29,19 @@ me@host>
 A quick rundown of what's happening above:
 
 * The `Authorization` header with your secret token is how **Sound//Infra**
-  ensures that only you can make changes to your domain. Without that token, an
+  ensures that only you can make changes to your domain. Without your token, an
 `Unauthorized` or `Forbidden` response
-  will be returned. Just remember not to share that token with anybody else!
+  will be returned. Just remember not to share your token with anybody else!
 * Setting `Content-Type:` stops the `curl` command from using it's (incorrect)
   default content type. **Sound//Infra** will automatically guess the content
-  type based on common file extension (`.html` will be `text/html`), or you can
+  type based on common file extensions (`.html` will be `text/html`), or you can
   manually set the content type.
 * `--data-binary` tells the `curl` command to upload the contents of the file
   `public/index.html`
 * Last but not least is the URL `https://kmrule.com/index.html` where the
   file you uploaded will be published to the web.
 The response `1ee1e6f4c99a61af0e718560785569cc,index.html` is the MD5 hash,
-and path of the file you uploaded.
+and path of your file.
 
 ### Check that your file was uploaded correctly
 The first way to check that your file was uploaded correctly is to visit
@@ -50,18 +51,21 @@ The path `index.html` is special, so you can also visit
 
 #### Check the hash of the file
 The second way to check your file was uploaded correctly is to check hash of
-your local file against what **Sound//Infra** returned . You can use the
-`md5sum` `md5` or `openssl md5` commands:
+your local file against what **Sound//Infra** returned. You can use the
+`md5sum` `md5` or `openssl md5` commands.
+
+Works on Linux and some Macs:
 ```
-# Works on Linux and some Macs
 me@host> md5sum public/index.html
 1ee1e6f4c99a61af0e718560785569cc  public/index.html
-
-# Works on Macs:
+```
+Works on Macs:
+```
 me@host> md5 public/index.html
 MD5 (public/index.html) = 1ee1e6f4c99a61af0e718560785569cc
-
-# Works if you have openssl installed
+```
+Works if you have openssl installed:
+```
 me@host> openssl md5 public/index.html
 MD5(public/index.html)= 1ee1e6f4c99a61af0e718560785569cc
 ```
@@ -69,7 +73,6 @@ MD5(public/index.html)= 1ee1e6f4c99a61af0e718560785569cc
 To check what is currently published to your domain, make a HTTP OPTIONS
 request to your domain:
 ```
-me@host> SOUNDINFRA_TOKEN=[... secret token ...]
 me@host> curl -X OPTIONS \
  > -H "Authorization: Bearer $SOUNDINFRA_TOKEN" \
  > https://kmrule.com
