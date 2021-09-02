@@ -1,6 +1,7 @@
 import unittest
 from src import publish
 
+
 class TestSiteDiff(unittest.TestCase):
 
     def test_blank_site(self):
@@ -24,6 +25,7 @@ class TestSiteDiff(unittest.TestCase):
         remote = {"index.html": "1234", "error.html": "4554"}
         self.assertFalse(publish.diff_files(local, remote))
 
+
 class TestSiteClean(unittest.TestCase):
 
     def test_blank_site(self):
@@ -43,6 +45,9 @@ class TestSiteClean(unittest.TestCase):
     def test_deleted_local_files(self):
         local = {"index.html": "1234"}
         remote = {"index.html": "1234", "error.html": "4554"}
-        self.assertListEqual(publish.clean_files(local, remote), ["error.html"])
+        actual = publish.clean_files(local, remote)
+        self.assertListEqual(actual, ["error.html"])
+
+
 if __name__ == '__main__':
     unittest.main()
