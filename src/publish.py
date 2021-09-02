@@ -42,6 +42,11 @@ def diff_files(local_files: FileSet, remote_files: FileSet) -> FileSet:
             result[name] = hash
     return result
 
+def clean_files(local_files: FileSet, remote_files: FileSet) -> list[str]:
+    return [name for name in remote_files.keys()
+            if name not in local_files]
+
+
 
 # Publishes contents of publish_dir.
 # Skips files that have already been published (based on hash).
