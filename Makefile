@@ -5,6 +5,7 @@ types:
 	mypy src tests
 
 clean:
-	rm -rf __pycache__
+	rm -rf **/__pycache__
+	rm -rf **/*.pyc
 
 build: types test
