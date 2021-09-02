@@ -2,7 +2,9 @@
 from os.path import relpath
 import hashlib
 from pathlib import Path
-from typing import Dict, List, Tuple
+import logging
+
+logging.basicConfig(level=logging.WARNING)
 
 PUBLISH_DIR = "public"
 GLOB_ALL = "*"
@@ -33,12 +35,12 @@ def diff_files(local_files: FileSet, remote_files: FileSet) -> FileSet:
     for name, hash in local_files.items():
         if name in remote_files:
             if hash is remote_files[name]:
-                print(f"Remote {name} hash ({hash}) matches local hash")
+                logging.info(f"Remote {name} hash ({hash}) matches local hash")
             else:
-                print(f"{name} hash {hash} does not match remote hash {remote_files[name]}")
+                logging.info(f"Local {name} hash {hash} does not match remote hash {remote_files[name]}.")
                 result[name] = hash
         else:
-            print(f"{name} is not published")
+            logging.info(f"{name} ({hash}) is not published.")
             result[name] = hash
     return result
 
