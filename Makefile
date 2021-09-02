@@ -1,3 +1,5 @@
+build: style types test
+
 test:
 	python3 -m unittest discover
 
@@ -8,4 +10,5 @@ clean:
 	rm -rf **/__pycache__
 	rm -rf **/*.pyc
 
-build: types test
+style:
+	flake8
