@@ -1,19 +1,32 @@
 import os
 import http.client
+from http import HTTPStatus
 
 HTTPS = "https"
-
 
 TOKEN_ENV_VAR = "SOUNDINFRA_TOKEN"
 AUTH_TOKEN = os.environ.get(TOKEN_ENV_VAR)
 
-def get_csv(site):
-    print(os.environ)
-    auth_header = f"Bearer {AUTH_TOKEN}"
-    conn = http.client.HTTPSConnection(site)
-    conn.request("OPTIONS", "/", headers={"Authorization": auth_header} )
-    response = conn.getresponse()
-    print("HTTP status: response.status")
-    while chunk := response.read(200):
-        print(repr(chunk))
-    conn.close()
+OPTIONS = "OPTIONS"
+AUTHORIZATION = "Authorization"
+EMPTY_PATH = "/"
+
+
+class Acquire():
+
+    def __init__(self, conn):
+        self.conn = conn
+
+    def read_remote_csv(self, token):
+        conn = self.conn
+        try:
+            conn.request(OPTIONS, EMPTY_PATH,
+                         headers={AUTHORIZATION: f"Bearer {token}"})
+            response = conn.getresponse()
+            if response.status is HTTPStatus.OK:
+                return response.readlines()
+            else:
+                print(f"Oops, got a {response.status}")
+        finally:
+            conn.close()
+        return []
