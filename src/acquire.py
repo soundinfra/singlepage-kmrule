@@ -15,18 +15,24 @@ UTF8 = "utf-8"
 
 class Acquire():
 
-    def __init__(self, conn: http.client.HTTPSConnection):
-        self.conn = conn
+    def __init__(self, site: str, conn: http.client.HTTPSConnection = None):
+        if not site:
+            raise ValueError(f"Invalid site name: \"{site}\".")
+        if not '.' in site:
+            raise ValueError(f"No Top-Level-Domain for site: \"{site}\"")
+        if not conn:
+            self.conn = http.HTTPSConnection(site)
+        else:
+            self.conn = conn
 
     def read_remote_csv(self, token: str) -> list[str]:
-        conn = self.conn
         try:
-            conn.request(OPTIONS, EMPTY_PATH,
+            self.conn.request(OPTIONS, EMPTY_PATH,
                          headers={AUTHORIZATION: f"Bearer {token}"})
-            response = conn.getresponse()
+            response = self.conn.getresponse()
             if response.status is HTTPStatus.OK:
                 return [line.decode(UTF8) for line in response.readlines()]
             else:
                 raise RuntimeError(f"Oops, got a {response.status}")
         finally:
-            conn.close()
+            self.conn.close()

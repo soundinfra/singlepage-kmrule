@@ -8,9 +8,25 @@ from unittest.mock import patch
 
 class TestAcquire(unittest.TestCase):
 
+    def test_blank_site_name(self):
+        with self.assertRaises(ValueError) as context:
+            Acquire("")
+        self.assertEqual("Invalid site name: \"\".", str(context.exception))
+
+    def test_no_tld(self):
+        with self.assertRaises(ValueError) as context:
+            Acquire("notldhere")
+        self.assertEqual("No Top-Level-Domain for site: \"notldhere\"", str(context.exception))
+
+    def test_invalid_chars(self):
+        self.assertTrue(False)
+
+    def test_too_long(self):
+        self.assertTrue(False)
+
     @patch("http.client.HTTPSConnection")
     def test_get_conn(self, mock_conn):
-        mysite = Acquire(mock_conn)
+        mysite = Acquire("my.site", conn=mock_conn)
         actual = mysite.conn
         self.assertEqual(mock_conn, actual)
 
@@ -23,7 +39,7 @@ class TestAcquire(unittest.TestCase):
         mock_conn.getresponse.return_value = mock_resp
 
         # When
-        mysite = Acquire(mock_conn)
+        mysite = Acquire("my.site", conn=mock_conn)
         result = mysite.read_remote_csv("token")
 
         # Then
@@ -39,7 +55,7 @@ class TestAcquire(unittest.TestCase):
         mock_conn.getresponse.return_value = mock_resp
 
         # When
-        notasite = Acquire(mock_conn)
+        notasite = Acquire("not.a.site", conn=mock_conn)
         with self.assertRaises(RuntimeError) as context:
             notasite.read_remote_csv("token")
 
