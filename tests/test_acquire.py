@@ -49,7 +49,7 @@ class TestAcquire(unittest.TestCase):
 
         # When
         mysite = Acquire("my.site", conn=mock_conn)
-        result = mysite.read_remote_csv("token")
+        result = mysite.get_remote_csv("token")
 
         # Then
         self.assertEqual(result, ["one", "two"])
@@ -68,7 +68,7 @@ class TestAcquire(unittest.TestCase):
         # When
         notasite = Acquire("not.a.site", conn=mock_conn)
         with self.assertRaises(RuntimeError) as context:
-            notasite.read_remote_csv("token")
+            notasite.get_remote_csv("token")
 
         # Then
         mock_resp.readlines.assert_not_called()

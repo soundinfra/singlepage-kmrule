@@ -1,11 +1,8 @@
-import os
 from http.client import HTTPSConnection
 from http import HTTPStatus
 
 HTTPS = "https"
 
-TOKEN_ENV_VAR = "SOUNDINFRA_TOKEN"
-AUTH_TOKEN = os.environ.get(TOKEN_ENV_VAR)
 
 AUTHORIZATION = "Authorization"
 DOMAIN_MAX_LENGTH = 253
@@ -38,7 +35,7 @@ class Acquire():
         else:
             self.conn = conn
 
-    def read_remote_csv(self, token: str) -> list[str]:
+    def get_remote_csv(self, token: str) -> list[str]:
         try:
             headers = {AUTHORIZATION: f"Bearer {token}"}
             self.conn.request(OPTIONS, EMPTY_PATH, headers=headers)

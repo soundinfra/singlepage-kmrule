@@ -4,6 +4,8 @@ import hashlib
 from pathlib import Path
 import logging
 
+from src import soundinfra
+
 logging.basicConfig(level=logging.WARNING)
 
 PUBLISH_DIR = "public"
@@ -27,11 +29,7 @@ def hash_local_files(publish_dir: str) -> FileSet:
 
 
 def read_remote_csv(filename: str) -> FileSet:
-    result = {}
-    for line in open(filename, READ_BINARY).readlines():
-        values = line.decode().strip().split(",")
-        result[values[1]] = values[0]
-    return result
+    return soundinfra.parse_csv(open(filename, READ_BINARY).readlines())
 
 
 def hashes_match(name, local, remote):
@@ -67,7 +65,7 @@ def clean_files(local_files: FileSet, remote_files: FileSet) -> list[str]:
 # Skips files that have already been published (based on hash).
 # Will not delete any files from remote, use clean operation for that.
 def publish_site(publish_dir: str, remote_csv: str):
-    print(f"Publishing contents of: {publish_dir}")
+    print(f"Publishing contents of: {publish_dir} at: ")
     local_files = hash_local_files(publish_dir)
     remote_files = read_remote_csv(remote_csv)
     diff = diff_files(local_files, remote_files)
