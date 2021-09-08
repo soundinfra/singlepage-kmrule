@@ -11,18 +11,27 @@ class TestAcquire(unittest.TestCase):
     def test_blank_site_name(self):
         with self.assertRaises(ValueError) as context:
             Acquire("")
-        self.assertEqual("Invalid site name: \"\".", str(context.exception))
+        self.assertEqual(
+            "Domain name cannot be blank.", str(context.exception))
 
     def test_no_tld(self):
         with self.assertRaises(ValueError) as context:
             Acquire("notldhere")
-        self.assertEqual("No Top-Level-Domain for site: \"notldhere\"", str(context.exception))
+        self.assertEqual("No Top-Level-Domain found in: \"notldhere\"",
+                         str(context.exception))
 
     def test_invalid_chars(self):
-        self.assertTrue(False)
+        with self.assertRaises(ValueError) as context:
+            Acquire("surprise!.com")
+        self.assertEqual("Invalid character ! in domain name.",
+                         str(context.exception))
 
     def test_too_long(self):
-        self.assertTrue(False)
+        long_domain_name = ".".join(8 * ("thiswillmakeareallylongdomainname",))
+        with self.assertRaises(ValueError) as context:
+            Acquire(long_domain_name)
+        self.assertEqual("Domain name is too long (271 chars, max is 253)",
+                         str(context.exception))
 
     @patch("http.client.HTTPSConnection")
     def test_get_conn(self, mock_conn):
@@ -44,6 +53,8 @@ class TestAcquire(unittest.TestCase):
 
         # Then
         self.assertEqual(result, ["one", "two"])
+        mock_conn.request.assert_called_with(
+            "OPTIONS", "/", headers={"Authorization": "Bearer token"})
         mock_conn.getresponse.assert_called_once()
         mock_resp.readlines.assert_called_once()
 
@@ -61,4 +72,6 @@ class TestAcquire(unittest.TestCase):
 
         # Then
         mock_resp.readlines.assert_not_called()
+        mock_conn.request.assert_called_with(
+            "OPTIONS", "/", headers={"Authorization": "Bearer token"})
         self.assertEqual("Oops, got a 401", str(context.exception))
