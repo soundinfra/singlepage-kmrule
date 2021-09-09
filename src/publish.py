@@ -1,10 +1,12 @@
 #! /usr/local/bin/python3
 from os.path import relpath
-import hashlib
 from pathlib import Path
+from typing import NamedTuple
+import argparse
+import hashlib
 import logging
 
-from src import soundinfra
+from src import soundinfra as si
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -29,7 +31,7 @@ def hash_local_files(publish_dir: str) -> FileSet:
 
 
 def read_remote_csv(filename: str) -> FileSet:
-    return soundinfra.parse_csv(open(filename, READ_BINARY).readlines())
+    return si.parse_csv(open(filename, READ_BINARY).readlines())
 
 
 def hashes_match(name, local, remote):
@@ -59,6 +61,37 @@ def diff_files(local_files: FileSet, remote_files: FileSet) -> FileSet:
 def clean_files(local_files: FileSet, remote_files: FileSet) -> list[str]:
     return [name for name in remote_files.keys()
             if name not in local_files]
+
+
+class PublishArgs(NamedTuple):
+    domain: str
+    directory: str
+    token: str
+    clean: bool
+
+
+def parse(argv):
+    parser = argparse.ArgumentParser(
+        description="Publish to the web with Sound//Infra.")
+    parser.add_argument("domain", type=str,
+                        help="The domain to publish to, like example.com.")
+    parser.add_argument("--directory", dest="directory",
+                        type=str, default=PUBLISH_DIR,
+                        help=f"Directory to publish (default '{PUBLISH_DIR}')")
+    parser.add_argument("--token", type=str,
+                        help="Override Sound//Infra access token. By default,"
+                             f"this program will look at the "
+                             f"{si.TOKEN_ENV_VAR} environment variable.")
+    parser.add_argument("--clean", action="store_true",
+                        help="If true, clean files from the domain.")
+    return parser.parse_args(argv)
+
+
+def setup(argv):
+    parsed = parse(argv)
+    return PublishArgs(domain=parsed.domain, directory=parsed.directory,
+                       clean=parsed.clean,
+                       token=parsed.token if parsed.token else si.get_token())
 
 
 # Publishes contents of publish_dir.

@@ -1,5 +1,8 @@
 build: style types test
 
+publish:
+	./publish.py kmrule.com
+
 test:
 	python3 -m unittest discover
 
