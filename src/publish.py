@@ -18,7 +18,7 @@ def token_from_env() -> str:
 
 
 def hashes_match(name, local, remote):
-    if local is remote:
+    if local == remote:
         logging.info(f"Remote {name} hash ({local}) matches local hash")
         return True
     else:

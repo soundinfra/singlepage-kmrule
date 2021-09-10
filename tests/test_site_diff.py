@@ -17,7 +17,7 @@ class TestSiteDiff(unittest.TestCase):
 
     def test_no_changes(self):
         local = {"index": "1234"}
-        remote = {"index": "1234"}
+        remote = {"index": b"1234".decode('utf-8')}
         self.assertFalse(publish.diff_files(local, remote))
 
     def test_deleted_local_files(self):
