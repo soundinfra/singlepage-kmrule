@@ -1,11 +1,11 @@
 #! /usr/bin/env python3
-
-import sys
+import logging
 
 from src import publish
+import sys
 
-PUBLIC = "public"
-
+logging.basicConfig(level=logging.WARNING)
 
 if __name__ == "__main__":
-    publish.setup(sys.argv[1:])
+    args = publish.setup(sys.argv[1:])
+    publish.publish(args)

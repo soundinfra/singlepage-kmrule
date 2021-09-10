@@ -1,37 +1,20 @@
-#! /usr/local/bin/python3
-from os.path import relpath
-from pathlib import Path
-from typing import NamedTuple
+# This file contains
+import os
+
+from src.soundinfra import build_manifest, SoundInfraClient
+from src.types import FileSet, PublishArgs
 import argparse
-import hashlib
 import logging
 
-from src import soundinfra as si
-
-logging.basicConfig(level=logging.WARNING)
-
 PUBLISH_DIR = "public"
-GLOB_ALL = "*"
-READ_BINARY = "rb"
-
-FileSet = dict[str, str]
+TOKEN_ENV_VAR = "SOUNDINFRA_TOKEN"
 
 
-def hash_file(path: Path) -> str:
-    md5 = hashlib.md5()
-    md5.update(open(path, READ_BINARY).read())
-    return md5.hexdigest()
-
-
-def hash_local_files(publish_dir: str) -> FileSet:
-    files = [path for path in Path(publish_dir).rglob(GLOB_ALL)
-             if path.is_file()]
-    return {relpath(path, publish_dir): hash_file(path)
-            for path in sorted(files)}
-
-
-def read_remote_csv(filename: str) -> FileSet:
-    return si.parse_csv(open(filename, READ_BINARY).readlines())
+def token_from_env() -> str:
+    if TOKEN_ENV_VAR in os.environ:
+        return os.environ[TOKEN_ENV_VAR]
+    else:
+        raise ValueError(f"SoundInfra token {TOKEN_ENV_VAR} is not set")
 
 
 def hashes_match(name, local, remote):
@@ -63,13 +46,6 @@ def clean_files(local_files: FileSet, remote_files: FileSet) -> list[str]:
             if name not in local_files]
 
 
-class PublishArgs(NamedTuple):
-    domain: str
-    directory: str
-    token: str
-    clean: bool
-
-
 def parse(argv):
     parser = argparse.ArgumentParser(
         description="Publish to the web with Sound//Infra.")
@@ -81,25 +57,26 @@ def parse(argv):
     parser.add_argument("--token", type=str,
                         help="Override Sound//Infra access token. By default,"
                              f"this program will look at the "
-                             f"{si.TOKEN_ENV_VAR} environment variable.")
+                             f"{TOKEN_ENV_VAR} environment variable.")
     parser.add_argument("--clean", action="store_true",
                         help="If true, clean files from the domain.")
     return parser.parse_args(argv)
 
 
 def setup(argv):
-    parsed = parse(argv)
-    return PublishArgs(domain=parsed.domain, directory=parsed.directory,
-                       clean=parsed.clean,
-                       token=parsed.token if parsed.token else si.get_token())
+    args = parse(argv)
+    return PublishArgs(domain=args.domain, directory=args.directory,
+                       clean=args.clean,
+                       token=args.token if args.token else token_from_env())
 
 
 # Publishes contents of publish_dir.
 # Skips files that have already been published (based on hash).
 # Will not delete any files from remote, use clean operation for that.
-def publish_site(publish_dir: str, remote_csv: str):
-    print(f"Publishing contents of: {publish_dir} at: ")
-    local_files = hash_local_files(publish_dir)
-    remote_files = read_remote_csv(remote_csv)
+def publish(args: PublishArgs):
+    print(f"Publishing contents of: {args.directory} at: ")
+    local_files = build_manifest(args.directory)
+    client = SoundInfraClient(args.domain)
+    remote_files = client.get_remote_fileset(args.token)
     diff = diff_files(local_files, remote_files)
     print(diff)

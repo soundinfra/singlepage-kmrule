@@ -4,3 +4,6 @@
 # IntelliJ
 .idea
 **/*.iml
+
+# Sound//Infra
+.soundinfra_token

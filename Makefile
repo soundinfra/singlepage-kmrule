@@ -1,7 +1,7 @@
 build: style types test
 
 publish:
-	./publish.py kmrule.com
+	./publish.py kmrule.com --token=`cat .soundinfra_token`
 
 test:
 	python3 -m unittest discover

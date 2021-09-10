@@ -1,1 +1,1 @@
-from .acquire import Acquire # noqa
+from .soundinfra import SoundInfraClient # noqa

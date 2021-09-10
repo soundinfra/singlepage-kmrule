@@ -13,7 +13,7 @@ class TestPublish(unittest.TestCase):
             publish.setup([])
         self.assertEqual(2, context.exception.code)
 
-    @patch.dict("os.environ", {src.soundinfra.TOKEN_ENV_VAR: "token"},
+    @patch.dict("os.environ", {src.publish.TOKEN_ENV_VAR: "token"},
                 clear=True)
     def test_simple_happy_case(self):
         # Given
@@ -40,7 +40,7 @@ class TestPublish(unittest.TestCase):
             domain=domain, directory=publish.PUBLISH_DIR,
             token=token, clean=False))
 
-    @patch.dict("os.environ", {src.soundinfra.TOKEN_ENV_VAR: "token"},
+    @patch.dict("os.environ", {src.publish.TOKEN_ENV_VAR: "token"},
                 clear=True)
     def test_override_directory(self):
         # Given
@@ -57,7 +57,7 @@ class TestPublish(unittest.TestCase):
         self.assertEqual(args.domain, domain)
         self.assertFalse(args.clean)
 
-    @patch.dict("os.environ", {src.soundinfra.TOKEN_ENV_VAR: "token"},
+    @patch.dict("os.environ", {src.publish.TOKEN_ENV_VAR: "token"},
                 clear=True)
     def test_set_clean(self):
         # Given
