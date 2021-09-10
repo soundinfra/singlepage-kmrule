@@ -130,10 +130,13 @@ class SoundInfraClient():
     def __exit__(self):
         self.conn.close()
 
+    def _get_base_headers(self):
+        return {AUTHORIZATION: f"Bearer {self.token}"}
+
     def _get_manifest_csv(self, token: str) -> list[bytes]:
         try:
-            headers = {AUTHORIZATION: f"Bearer {token}"}
-            self.conn.request(OPTIONS, EMPTY_PATH, headers=headers)
+            self.conn.request(OPTIONS, EMPTY_PATH,
+                              headers=self._get_base_headers())
             response = self.conn.getresponse()
             if response.status == HTTPStatus.OK:
                 return response.readlines()
