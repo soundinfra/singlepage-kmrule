@@ -6,7 +6,7 @@ from src import SoundInfraClient
 from unittest.mock import patch
 
 
-class TestAcquire(unittest.TestCase):
+class TestSoundInfraClient(unittest.TestCase):
 
     def test_blank_site_name(self):
         with self.assertRaises(ValueError) as context:
@@ -49,7 +49,7 @@ class TestAcquire(unittest.TestCase):
 
         # When
         mysite = SoundInfraClient("my.site", conn=mock_conn)
-        result = mysite.get_remote_csv("token")
+        result = mysite._get_manifest_csv("token")
 
         # Then
         self.assertEqual(result, [b"one", b"two"])
@@ -68,7 +68,7 @@ class TestAcquire(unittest.TestCase):
         # When
         notasite = SoundInfraClient("not.a.site", conn=mock_conn)
         with self.assertRaises(RuntimeError) as context:
-            notasite.get_remote_csv("token")
+            notasite._get_manifest_csv("token")
 
         # Then
         mock_resp.readlines.assert_not_called()

@@ -21,16 +21,49 @@ UTF8 = "utf-8"
 
 
 def hash_file(path: Path) -> str:
+    '''
+        Hash a local file the same way Sound//Infra does for the manifest CSV.
+
+    :param path:    The path of the file to hash.
+    :return:        An MD5 hex digest string.
+    '''
+    #
     md5 = hashlib.md5()
     md5.update(open(path, READ_BINARY).read())
     return md5.hexdigest()
 
 
-def build_manifest(publish_dir: str) -> FileSet:
-    files = [path for path in Path(publish_dir).rglob(GLOB_ALL)
+def build_manifest(directory: str) -> FileSet:
+    '''
+    Build a local manifest in the same fashion that Sound//Infra generates a
+    manifest CSV for a site powered by Sound//Infra.
+
+    Basically this function recursively takes a MD5 hash of every file under
+    'directory' and returns a dictionary of path -> hash.
+
+    E.g. if the 'public' directory contains the following two files:
+    ```
+     /public
+        index.html
+        static/common.css
+    ```
+
+    Then `build_manifest("public")` will return:
+        FileSet {
+            "index.html": "1213abcef4...",
+            "static/common.css": "abcf14334..."
+        }
+
+        Parameters:
+            directory (str): The directory representing the local site root.
+        Returns:
+            manifest (FileSet): A dictionary of path -> hash pairs.
+    '''
+    files = [path for path in Path(directory).rglob(GLOB_ALL)
              if path.is_file()]
-    return {relpath(path, publish_dir): hash_file(path)
-            for path in sorted(files)}
+    manifest = {relpath(path, directory): hash_file(path)
+                for path in sorted(files)}
+    return manifest
 
 
 def validate_domain_name(name: str) -> None:
@@ -80,7 +113,7 @@ class SoundInfraClient():
         else:
             self.conn = conn
 
-    def get_remote_csv(self, token: str) -> list[bytes]:
+    def _get_manifest_csv(self, token: str) -> list[bytes]:
         try:
             headers = {AUTHORIZATION: f"Bearer {token}"}
             self.conn.request(OPTIONS, EMPTY_PATH, headers=headers)
@@ -93,4 +126,4 @@ class SoundInfraClient():
             self.conn.close()
 
     def get_remote_fileset(self, token: str) -> FileSet:
-        return parse_csv(self.get_remote_csv(token))
+        return parse_csv(self._get_manifest_csv(token))
