@@ -118,12 +118,10 @@ class SoundInfraClient():
             headers = {AUTHORIZATION: f"Bearer {token}"}
             self.conn.request(OPTIONS, EMPTY_PATH, headers=headers)
             response = self.conn.getresponse()
-            if response.status is HTTPStatus.OK:
+            if response.status == HTTPStatus.OK:
                 return response.readlines()
             else:
                 raise RuntimeError(f"Oops, got a {response.status}")
         finally:
             self.conn.close()
 
-    def get_remote_fileset(self, token: str) -> FileSet:
-        return parse_csv(self._get_manifest_csv(token))
