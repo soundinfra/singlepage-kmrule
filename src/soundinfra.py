@@ -17,6 +17,7 @@ GLOB_ALL = "*"
 HTTPS = "https"
 OPTIONS = "OPTIONS"
 READ_BINARY = "rb"
+TOKEN_MAX_LENGTH = 100
 UTF8 = "utf-8"
 
 
@@ -104,14 +105,30 @@ def parse_csv(lines: list[bytes]) -> FileSet:
     return result
 
 
+def validate_token(token: str) -> None:
+    if not token or type(token) is not str:
+        raise ValueError("Accesss token must be a valid, non-empty string.")
+    if len(token) > TOKEN_MAX_LENGTH:
+        raise ValueError("Access token is too long, should be under "
+                         f"{TOKEN_MAX_LENGTH} characters.")
+    if not token.isalnum():
+        raise ValueError("Access token should contain only alphanumeric "
+                         "characters.")
+
+
 class SoundInfraClient():
 
-    def __init__(self, site: str, conn: HTTPSConnection = None):
+    def __init__(self, site: str, token: str, conn: HTTPSConnection = None):
         validate_domain_name(site)
+        validate_token(token)
+        self.token = token
         if not conn:
             self.conn = HTTPSConnection(site)
         else:
             self.conn = conn
+
+    def __exit__(self):
+        self.conn.close()
 
     def _get_manifest_csv(self, token: str) -> list[bytes]:
         try:
@@ -125,3 +142,5 @@ class SoundInfraClient():
         finally:
             self.conn.close()
 
+    def get_manifest(self) -> FileSet:
+        return parse_csv(self._get_manifest_csv(self.token))

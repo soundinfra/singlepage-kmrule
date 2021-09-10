@@ -76,7 +76,7 @@ def setup(argv):
 def publish(args: PublishArgs):
     print(f"Publishing contents of: {args.directory} at: ")
     local_files = build_manifest(args.directory)
-    client = SoundInfraClient(args.domain)
-    remote_files = client.get_remote_fileset(args.token)
+    client = SoundInfraClient(args.domain, args.token)
+    remote_files = client.get_manifest()
     diff = diff_files(local_files, remote_files)
     print(diff)
