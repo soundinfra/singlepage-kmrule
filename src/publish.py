@@ -1,7 +1,7 @@
 # This file contains
 import os
 
-from src.soundinfra import build_manifest, SoundInfraClient
+from src.soundinfra import build_manifest, SoundInfraClient, parse_line
 from src.types import FileSet, PublishArgs
 import argparse
 import logging
@@ -17,7 +17,7 @@ def token_from_env() -> str:
         raise ValueError(f"SoundInfra token {TOKEN_ENV_VAR} is not set")
 
 
-def hashes_match(name, local, remote):
+def hashes_match(name: str, local: str, remote: str) -> bool:
     if local == remote:
         logging.info(f"Remote {name} hash ({local}) matches local hash")
         return True
@@ -74,9 +74,17 @@ def setup(argv):
 # Skips files that have already been published (based on hash).
 # Will not delete any files from remote, use clean operation for that.
 def publish(args: PublishArgs):
-    print(f"Publishing contents of: {args.directory} at: ")
+    print(f"Publishing contents of '{args.directory}' to '{args.domain}'")
     local_files = build_manifest(args.directory)
+    print(f"Found {len(local_files)} local files.")
     client = SoundInfraClient(args.domain, args.token)
     remote_files = client.get_manifest()
     diff = diff_files(local_files, remote_files)
-    print(diff)
+    print(f"Found {len(diff)} files to publish.")
+    for name, hash in diff.items():
+        f"Publishing: {name} ({hash[:5]}...)"
+        returned_hash = client.put(args.directory, name)
+        if hashes_match(name, hash, returned_hash):
+            print(f"Successfully published {name}")
+        else:
+            print(f"Epic fail on hash mismatch!!! {hash} {returned_hash}")

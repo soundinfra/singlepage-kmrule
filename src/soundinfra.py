@@ -1,6 +1,8 @@
 # This file contains all the code, constants, and other information required
 # to communicate with the Sound//Infra API.
 import hashlib
+import logging
+import os
 from http.client import HTTPSConnection
 from http import HTTPStatus
 from os.path import relpath
@@ -12,10 +14,11 @@ AUTHORIZATION = "Authorization"
 COMMA = ","
 DOMAIN_MAX_LENGTH = 253
 DOT = "."
-EMPTY_PATH = "/"
+SLASH = "/"
 GLOB_ALL = "*"
 HTTPS = "https"
 OPTIONS = "OPTIONS"
+PUT = "PUT"
 READ_BINARY = "rb"
 TOKEN_MAX_LENGTH = 100
 UTF8 = "utf-8"
@@ -81,27 +84,32 @@ def validate_domain_name(name: str) -> None:
             raise ValueError(f"Invalid character {char} in domain name.")
 
 
-def parse_csv(lines: list[bytes]) -> FileSet:
+def parse_line(index: int, line: bytes, separator=COMMA) -> tuple[str, str]:
+    try:
+        values = line.decode(UTF8).strip().split(separator)
+        if len(values) < 2:
+            raise ValueError(
+                f"Error: Expected two columns on line {index} of CSV.")
+        filename = values[1].strip()
+        hash = values[0].strip()
+        if not hash.isalnum():
+            raise ValueError(
+                f"Error: Hash on line {index} does not look valid.")
+        return (filename, hash)
+    except UnicodeDecodeError as err:
+        raise ValueError(
+            f"Error: Decode error on line {index} ({str(err)}).")
+
+
+def parse_csv(lines: list[bytes], separator=COMMA) -> FileSet:
     result = {}
     for index, line in enumerate(lines, 1):
-        try:
-            values = line.decode(UTF8).strip().split(COMMA)
-            if len(values) < 2:
-                raise ValueError(
-                    f"Error: Expected two columns on line {index} of CSV.")
-            filename = values[1].strip()
-            if filename in result:
-                raise ValueError(
-                    f"Error: Multiple entries for file: {filename}")
-            else:
-                hash = values[0].strip()
-                if not hash.isalnum():
-                    raise ValueError(
-                        f"Error: Hash on line {index} does not look valid.")
-                result[filename] = values[0].strip()
-        except UnicodeDecodeError as err:
+        filename, hash = parse_line(index, line, separator=separator)
+        if filename in result:
             raise ValueError(
-                f"Error: Decode error on line {index} ({str(err)}).")
+                f"Error: Multiple entries for file: {filename}")
+        else:
+            result[filename] = hash
     return result
 
 
@@ -133,9 +141,9 @@ class SoundInfraClient():
     def _get_base_headers(self):
         return {AUTHORIZATION: f"Bearer {self.token}"}
 
-    def _get_manifest_csv(self, token: str) -> list[bytes]:
+    def _get_manifest_csv(self) -> list[bytes]:
         try:
-            self.conn.request(OPTIONS, EMPTY_PATH,
+            self.conn.request(OPTIONS, SLASH,
                               headers=self._get_base_headers())
             response = self.conn.getresponse()
             if response.status == HTTPStatus.OK:
@@ -146,4 +154,29 @@ class SoundInfraClient():
             self.conn.close()
 
     def get_manifest(self) -> FileSet:
-        return parse_csv(self._get_manifest_csv(self.token))
+        return parse_csv(self._get_manifest_csv())
+
+    def put(self, directory: str, name: str) -> bytes:
+        local_path = Path(directory).joinpath(Path(name))
+        remote_path = SLASH + name
+        size = os.path.getsize(local_path)
+        logging.info(f"Publishing {local_path} as {remote_path} ({size} "
+                     "bytes)")
+        with open(local_path, READ_BINARY) as content:
+            self.conn.request(PUT,
+                              remote_path,
+                              headers=self._get_base_headers(),
+                              body=content.read())
+            response = self.conn.getresponse()
+            content.readlines()
+            if response.status == HTTPStatus.OK:
+                # Return hash so it can be checked.
+                parsed = parse_csv(response.readlines(), separator=SLASH)
+                if len(parsed) == 1:
+                    return parsed[name]
+                else:
+                    raise RuntimeError(
+                        f"Response should be one line! {parsed}")
+            else:
+                print(response.read())
+                raise RuntimeError(f"Oops, got a {response.status}")
