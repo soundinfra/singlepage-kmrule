@@ -4,7 +4,13 @@ update_latest:
 	echo `date` > public/latest.txt
 
 publish:
+	./publish.py --token=`cat .soundinfra_token` kmrule.com
+
+publish_verbose:
 	./publish.py -v --token=`cat .soundinfra_token` kmrule.com
+
+publish_clean:
+	./publish.py --clean --token=`cat .soundinfra_token` kmrule.com
 
 test_put: update_latest publish
 

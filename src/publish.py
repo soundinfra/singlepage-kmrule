@@ -72,6 +72,25 @@ def setup(argv):
                        verbose=args.verbose,
                        token=args.token if args.token else token_from_env())
 
+def clean(args: PublishArgs):
+    logging.warning(f"Cleaning {args.domain} based on contents of "
+                 f"'{args.directory}.")
+    client = SoundInfraClient(args.domain, args.token)
+    local_files = build_manifest(args.directory)
+    remote_files = client.get_manifest()
+    diff = clean_files(local_files, remote_files)
+    logging.warning(f"About to clean {len(diff)} files from {args.domain}.")
+    answer = input("Are you sure you want to continue? y/N yes/NO\n").lower()
+    if answer == 'y' or answer == "yes":
+        logging.warning(f"OK, cleaning {len(diff)} files from {args.domain}.")
+        for name in diff:
+            logging.warning(f"Deleting {name} from {args.domain}.")
+            client.delete(name)
+    else:
+        logging.warning("Cleaning canceled. No worries, have a nice day!")
+
+
+
 
 # Publishes contents of publish_dir.
 # Skips files that have already been published (based on hash).

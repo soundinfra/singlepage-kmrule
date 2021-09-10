@@ -12,6 +12,7 @@ from src.types import FileSet
 
 AUTHORIZATION = "Authorization"
 COMMA = ","
+DELETE = "DELETE"
 DOMAIN_MAX_LENGTH = 253
 DOT = "."
 SLASH = "/"
@@ -180,3 +181,15 @@ class SoundInfraClient():
             else:
                 logging.warning(f"Failed HTTP response: {response}.")
                 raise RuntimeError(f"HTTP response code: ({response.status}).")
+
+    def delete(self, name: str) -> None:
+        remote_path = SLASH + name
+        self.conn.request(DELETE,
+                          remote_path,
+                          headers=self._get_base_headers())
+        response = self.conn.getresponse()
+        if response.status == HTTPStatus.OK:
+            logging.info(f"Successfully deleted {name}.")
+        else:
+            logging.warning(f"Failed HTTP response: {response}.")
+            raise RuntimeError(f"HTTP response code: ({response.status}).")
