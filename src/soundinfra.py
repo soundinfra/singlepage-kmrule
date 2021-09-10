@@ -3,23 +3,20 @@
 import hashlib
 import logging
 import os
-from http.client import HTTPSConnection
+from http.client import HTTPSConnection, HTTPResponse
 from http import HTTPStatus
 from os.path import relpath
 from pathlib import Path
 
-from src.types import FileSet
+from src.types import FileSet, Method
 
 AUTHORIZATION = "Authorization"
 COMMA = ","
-DELETE = "DELETE"
 DOMAIN_MAX_LENGTH = 253
 DOT = "."
 SLASH = "/"
 GLOB_ALL = "*"
 HTTPS = "https"
-OPTIONS = "OPTIONS"
-PUT = "PUT"
 READ_BINARY = "rb"
 TOKEN_MAX_LENGTH = 100
 UTF8 = "utf-8"
@@ -144,15 +141,21 @@ class SoundInfraClient():
 
     def _get_manifest_csv(self) -> list[bytes]:
         try:
-            self.conn.request(OPTIONS, SLASH,
-                              headers=self._get_base_headers())
-            response = self.conn.getresponse()
+            response = self._do_request(Method.OPTIONS, SLASH)
             if response.status == HTTPStatus.OK:
                 return response.readlines()
             else:
                 raise RuntimeError(f"Oops, got a {response.status}.")
         finally:
             self.conn.close()
+
+    def _do_request(self, method: Method,
+                    path=SLASH,
+                    body=None) -> HTTPResponse:
+        self.conn.request(method.value, path,
+                          headers=self._get_base_headers(),
+                          body=body)
+        return self.conn.getresponse()
 
     def get_manifest(self) -> FileSet:
         return parse_csv(self._get_manifest_csv())
@@ -164,11 +167,8 @@ class SoundInfraClient():
         logging.info(f"Publishing {local_path} as {remote_path} ({size} "
                      "bytes)")
         with open(local_path, READ_BINARY) as content:
-            self.conn.request(PUT,
-                              remote_path,
-                              headers=self._get_base_headers(),
-                              body=content.read())
-            response = self.conn.getresponse()
+            response = self._do_request(Method.PUT, remote_path,
+                                        body=content.read())
             content.readlines()
             if response.status == HTTPStatus.OK:
                 # Return hash so it can be checked.
@@ -184,12 +184,14 @@ class SoundInfraClient():
 
     def delete(self, name: str) -> None:
         remote_path = SLASH + name
-        self.conn.request(DELETE,
-                          remote_path,
-                          headers=self._get_base_headers())
-        response = self.conn.getresponse()
+        response = self._do_request(Method.DELETE, remote_path)
         if response.status == HTTPStatus.OK:
             logging.info(f"Successfully deleted {name}.")
+            response_body = response.read()
+            if response_body:
+                decoded = response_body.decode(UTF8)
+                raise RuntimeError("Response body should be empty, " +
+                                   f"not: {decoded}.")
         else:
             logging.warning(f"Failed HTTP response: {response}.")
             raise RuntimeError(f"HTTP response code: ({response.status}).")
