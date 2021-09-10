@@ -75,9 +75,9 @@ def validate_domain_name(name: str) -> None:
         raise ValueError("Domain name cannot be blank.")
     if len(name) > DOMAIN_MAX_LENGTH:
         raise ValueError(f"Domain name is too long ({len(name)} chars, " +
-                         f"max is {DOMAIN_MAX_LENGTH})")
+                         f"max is {DOMAIN_MAX_LENGTH}).")
     if DOT not in name:
-        raise ValueError(f"No Top-Level-Domain found in: \"{name}\"")
+        raise ValueError(f"No Top-Level-Domain found in: \"{name}\".")
     # Check domain name for (incomplete) list of invalid characters.
     for char in name:
         if char in "_!@#$%^&*":
@@ -107,7 +107,7 @@ def parse_csv(lines: list[bytes], separator=COMMA) -> FileSet:
         filename, hash = parse_line(index, line, separator=separator)
         if filename in result:
             raise ValueError(
-                f"Error: Multiple entries for file: {filename}")
+                f"Error: Multiple entries for file: {filename}.")
         else:
             result[filename] = hash
     return result
@@ -149,7 +149,7 @@ class SoundInfraClient():
             if response.status == HTTPStatus.OK:
                 return response.readlines()
             else:
-                raise RuntimeError(f"Oops, got a {response.status}")
+                raise RuntimeError(f"Oops, got a {response.status}.")
         finally:
             self.conn.close()
 
@@ -176,7 +176,7 @@ class SoundInfraClient():
                     return parsed[name]
                 else:
                     raise RuntimeError(
-                        f"Response should be one line! {parsed}")
+                        f"Response should be one line! {parsed}.")
             else:
-                print(response.read())
-                raise RuntimeError(f"Oops, got a {response.status}")
+                logging.warning(f"Failed HTTP response: {response}.")
+                raise RuntimeError(f"HTTP response code: ({response.status}).")

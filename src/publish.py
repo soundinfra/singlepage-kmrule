@@ -14,15 +14,15 @@ def token_from_env() -> str:
     if TOKEN_ENV_VAR in os.environ:
         return os.environ[TOKEN_ENV_VAR]
     else:
-        raise ValueError(f"SoundInfra token {TOKEN_ENV_VAR} is not set")
+        raise ValueError(f"SoundInfra token {TOKEN_ENV_VAR} is not set.")
 
 
 def hashes_match(name: str, local: str, remote: str) -> bool:
     if local == remote:
-        logging.info(f"Remote {name} hash ({local}) matches local hash")
+        logging.debug(f"Remote {name} hash ({local}) matches local hash.")
         return True
     else:
-        logging.info(
+        logging.debug(
             f"Hash mismatch for {name} local: {local}, remote: {remote}.")
         return False
 
@@ -54,6 +54,8 @@ def parse(argv):
     parser.add_argument("--directory", dest="directory",
                         type=str, default=PUBLISH_DIR,
                         help=f"Directory to publish (default '{PUBLISH_DIR}')")
+    parser.add_argument("-v", "--verbose",  action="store_true",
+                        help="Enable verbose logging.")
     parser.add_argument("--token", type=str,
                         help="Override Sound//Infra access token. By default,"
                              f"this program will look at the "
@@ -67,6 +69,7 @@ def setup(argv):
     args = parse(argv)
     return PublishArgs(domain=args.domain, directory=args.directory,
                        clean=args.clean,
+                       verbose=args.verbose,
                        token=args.token if args.token else token_from_env())
 
 
@@ -74,17 +77,20 @@ def setup(argv):
 # Skips files that have already been published (based on hash).
 # Will not delete any files from remote, use clean operation for that.
 def publish(args: PublishArgs):
-    print(f"Publishing contents of '{args.directory}' to '{args.domain}'")
-    local_files = build_manifest(args.directory)
-    print(f"Found {len(local_files)} local files.")
+    logging.info(f"Publishing contents of '{args.directory}' to "
+                 f"'{args.domain}'.")
     client = SoundInfraClient(args.domain, args.token)
+    local_files = build_manifest(args.directory)
     remote_files = client.get_manifest()
     diff = diff_files(local_files, remote_files)
-    print(f"Found {len(diff)} files to publish.")
+    logging.info(f"Publish diff summary: ({len(local_files)},"
+                 f" {len(remote_files)}, {len(diff)}) (local, remote, "
+                   "updated) files.")
     for name, hash in diff.items():
-        f"Publishing: {name} ({hash[:5]}...)"
+        logging.debug(f"Publishing: {name} ({hash[:5]}...)")
         returned_hash = client.put(args.directory, name)
         if hashes_match(name, hash, returned_hash):
-            print(f"Successfully published {name}")
+            logging.debug(f"Successfully published {name}.")
         else:
-            print(f"Epic fail on hash mismatch!!! {hash} {returned_hash}")
+            logging.warning(f"Failed hash mismatch for {name}!!! "
+                            f"(local {hash}, returned: {returned_hash}).")

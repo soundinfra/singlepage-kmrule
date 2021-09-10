@@ -6,7 +6,8 @@ class PublishArgs(NamedTuple):
     domain: str
     directory: str
     token: str
-    clean: bool
+    clean: bool = False
+    verbose: bool = False
 
 
 FileSet = dict[str, str]
