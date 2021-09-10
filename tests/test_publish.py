@@ -38,7 +38,7 @@ class TestPublish(unittest.TestCase):
         # Then
         self.assertEqual(args, PublishArgs(
             domain=domain, directory=publish.PUBLISH_DIR,
-            token=token, clean=False))
+            dryrun=False, token=token, clean=False))
 
     @patch.dict("os.environ", {src.publish.TOKEN_ENV_VAR: "token"},
                 clear=True)

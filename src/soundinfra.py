@@ -157,7 +157,7 @@ class SoundInfraClient():
     def get_manifest(self) -> FileSet:
         return parse_csv(self._get_manifest_csv())
 
-    def put(self, directory: str, name: str) -> bytes:
+    def put(self, directory: str, name: str) -> str:
         local_path = Path(directory).joinpath(Path(name))
         remote_path = SLASH + name
         size = os.path.getsize(local_path)

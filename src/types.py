@@ -6,6 +6,7 @@ class PublishArgs(NamedTuple):
     domain: str
     directory: str
     token: str
+    dryrun: bool = True
     clean: bool = False
     verbose: bool = False
 

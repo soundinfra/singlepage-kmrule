@@ -1,7 +1,7 @@
 # This file contains
 import os
 
-from src.soundinfra import build_manifest, SoundInfraClient, parse_line
+from src.soundinfra import build_manifest, SoundInfraClient
 from src.types import FileSet, PublishArgs
 import argparse
 import logging
@@ -60,6 +60,9 @@ def parse(argv):
                         help="Override Sound//Infra access token. By default,"
                              f"this program will look at the "
                              f"{TOKEN_ENV_VAR} environment variable.")
+    parser.add_argument("--dryrun", action="store_true",
+                        default=False,
+                        help="Simulate, but don't actually publish files.")
     parser.add_argument("--clean", action="store_true",
                         help="If true, clean files from the domain.")
     return parser.parse_args(argv)
@@ -70,11 +73,13 @@ def setup(argv):
     return PublishArgs(domain=args.domain, directory=args.directory,
                        clean=args.clean,
                        verbose=args.verbose,
+                       dryrun=args.dryrun,
                        token=args.token if args.token else token_from_env())
+
 
 def clean(args: PublishArgs):
     logging.warning(f"Cleaning {args.domain} based on contents of "
-                 f"'{args.directory}.")
+                    f"'{args.directory}.")
     client = SoundInfraClient(args.domain, args.token)
     local_files = build_manifest(args.directory)
     remote_files = client.get_manifest()
@@ -90,8 +95,6 @@ def clean(args: PublishArgs):
         logging.warning("Cleaning canceled. No worries, have a nice day!")
 
 
-
-
 # Publishes contents of publish_dir.
 # Skips files that have already been published (based on hash).
 # Will not delete any files from remote, use clean operation for that.
@@ -104,12 +107,13 @@ def publish(args: PublishArgs):
     diff = diff_files(local_files, remote_files)
     logging.info(f"Publish diff summary: ({len(local_files)},"
                  f" {len(remote_files)}, {len(diff)}) (local, remote, "
-                   "updated) files.")
+                 "updated) files.")
     for name, hash in diff.items():
         logging.debug(f"Publishing: {name} ({hash[:5]}...)")
-        returned_hash = client.put(args.directory, name)
-        if hashes_match(name, hash, returned_hash):
-            logging.debug(f"Successfully published {name}.")
-        else:
-            logging.warning(f"Failed hash mismatch for {name}!!! "
-                            f"(local {hash}, returned: {returned_hash}).")
+        if not args.dryrun:
+            returned_hash = client.put(args.directory, name)
+            if hashes_match(name, hash, returned_hash):
+                logging.debug(f"Successfully published {name}.")
+            else:
+                logging.warning(f"Failed hash mismatch for {name}!!! "
+                                f"(local {hash}, returned: {returned_hash}).")

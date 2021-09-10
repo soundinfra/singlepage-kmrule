@@ -24,7 +24,7 @@ class TestSoundInfra(unittest.TestCase):
     def test_parse_csv_identical_filename(self):
         with self.assertRaises(ValueError) as context:
             si.parse_csv([b"hash , file.html", b"hash, file.html"])
-        self.assertEqual("Error: Multiple entries for file: file.html",
+        self.assertEqual("Error: Multiple entries for file: file.html.",
                          str(context.exception))
 
     # Extra columns are ignored

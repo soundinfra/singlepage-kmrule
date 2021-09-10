@@ -6,6 +6,9 @@ update_latest:
 publish:
 	./publish.py --token=`cat .soundinfra_token` kmrule.com
 
+publish_dryrun:
+	./publish.py --dryrun -v --token=`cat .soundinfra_token` kmrule.com
+
 publish_verbose:
 	./publish.py -v --token=`cat .soundinfra_token` kmrule.com
 
