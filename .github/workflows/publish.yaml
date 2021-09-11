@@ -27,7 +27,7 @@ jobs:
         run: |
           make build
       - name: Publish
-        with:
-          token: ${{ secrets.SOUNDINFRA_TOKEN }}
+        env:
+          SOUNDINFRA_TOKEN: ${{ secrets.SOUNDINFRA_TOKEN }}
         run: |
           ./publish.py kmrule.com
