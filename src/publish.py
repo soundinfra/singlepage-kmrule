@@ -80,19 +80,22 @@ def setup(argv):
 def clean(args: PublishArgs):
     logging.warning(f"Cleaning {args.domain} based on contents of "
                     f"'{args.directory}.")
-    client = SoundInfraClient(args.domain, args.token)
-    local_files = build_manifest(args.directory)
-    remote_files = client.get_manifest()
-    diff = clean_files(local_files, remote_files)
-    logging.warning(f"About to clean {len(diff)} files from {args.domain}.")
-    answer = input("Are you sure you want to continue? y/N yes/NO\n").lower()
-    if answer == 'y' or answer == "yes":
-        logging.warning(f"OK, cleaning {len(diff)} files from {args.domain}.")
-        for name in diff:
-            logging.warning(f"Deleting {name} from {args.domain}.")
-            client.delete(name)
-    else:
-        logging.warning("Cleaning canceled. No worries, have a nice day!")
+    with SoundInfraClient(args.domain, args.token) as client:
+        local_files = build_manifest(args.directory)
+        remote_files = client.get_manifest()
+        diff = clean_files(local_files, remote_files)
+        logging.warning(
+            f"About to clean {len(diff)} files from {args.domain}.")
+        answer = input(
+            "Are you sure you want to continue? y/N yes/NO\n").lower()
+        if answer == 'y' or answer == "yes":
+            logging.warning(
+                f"OK, cleaning {len(diff)} files from {args.domain}.")
+            for name in diff:
+                logging.warning(f"Deleting {name} from {args.domain}.")
+                client.delete(name)
+        else:
+            logging.warning("Cleaning canceled. No worries, have a nice day!")
 
 
 # Publishes contents of publish_dir.
@@ -101,19 +104,20 @@ def clean(args: PublishArgs):
 def publish(args: PublishArgs):
     logging.info(f"Publishing contents of '{args.directory}' to "
                  f"'{args.domain}'.")
-    client = SoundInfraClient(args.domain, args.token)
-    local_files = build_manifest(args.directory)
-    remote_files = client.get_manifest()
-    diff = diff_files(local_files, remote_files)
-    logging.info(f"Publish diff summary: ({len(local_files)},"
-                 f" {len(remote_files)}, {len(diff)}) (local, remote, "
-                 "updated) files.")
-    for name, hash in diff.items():
-        logging.debug(f"Publishing: {name} ({hash[:5]}...)")
-        if not args.dryrun:
-            returned_hash = client.put(args.directory, name)
-            if hashes_match(name, hash, returned_hash):
-                logging.debug(f"Successfully published {name}.")
-            else:
-                logging.warning(f"Failed hash mismatch for {name}!!! "
-                                f"(local {hash}, returned: {returned_hash}).")
+    with SoundInfraClient(args.domain, args.token) as client:
+        local_files = build_manifest(args.directory)
+        remote_files = client.get_manifest()
+        diff = diff_files(local_files, remote_files)
+        logging.info(f"Publish diff summary: ({len(local_files)},"
+                     f" {len(remote_files)}, {len(diff)}) (local, remote, "
+                     "updated) files.")
+        for name, hash in diff.items():
+            logging.debug(f"Publishing: {name} ({hash[:5]}...)")
+            if not args.dryrun:
+                returned_hash = client.put(args.directory, name)
+                if hashes_match(name, hash, returned_hash):
+                    logging.debug(f"Successfully published {name}.")
+                else:
+                    logging.warning(
+                        f"Failed hash mismatch for {name}!!! (local {hash}, "
+                        f"returned: {returned_hash}).")

@@ -35,9 +35,15 @@ class TestSoundInfraClient(unittest.TestCase):
 
     @patch("http.client.HTTPSConnection")
     def test_get_conn(self, mock_conn):
-        mysite = SoundInfraClient("my.site", "token", conn=mock_conn)
-        actual = mysite.conn
-        self.assertEqual(mock_conn, actual)
+        # Given
+        # When
+        with SoundInfraClient("my.site", "token", conn=mock_conn) as mysite:
+            actual = mysite.conn
+            self.assertEqual(mock_conn, actual)
+
+        # Then
+        mock_conn.connect.assert_called_once()
+        mock_conn.close.assert_called_once()
 
     @patch("http.client.HTTPResponse")
     @patch("http.client.HTTPSConnection")
@@ -53,12 +59,38 @@ class TestSoundInfraClient(unittest.TestCase):
 
         # Then
         self.assertDictEqual(result, {"index.html": "hash1"})
-        mock_conn.request.assert_called_with(
+        mock_conn.request.assert_called_once_with(
             "OPTIONS", "/",
             headers={"Authorization": "Bearer token"},
             body=None)
         mock_conn.getresponse.assert_called_once()
         mock_resp.readlines.assert_called_once()
+
+    @patch("http.client.HTTPResponse")
+    @patch("http.client.HTTPSConnection")
+    def test_get_manifest_multiple_calls(self, mock_conn, mock_resp):
+        # Given
+        mock_resp.status = HTTPStatus.OK
+        mock_resp.readlines.return_value = [b"hash1,index.html"]
+        mock_conn.getresponse.return_value = mock_resp
+
+        # When
+        with SoundInfraClient("my.site", "token", conn=mock_conn) as mysite:
+            result1 = mysite.get_manifest()
+            result2 = mysite.get_manifest()
+
+        # Then
+        self.assertDictEqual(result1, {"index.html": "hash1"})
+        self.assertDictEqual(result2, {"index.html": "hash1"})
+        mock_conn.request.assert_called_with(
+            "OPTIONS", "/",
+            headers={"Authorization": "Bearer token"},
+            body=None)
+
+        self.assertEqual(mock_conn.getresponse.call_count, 2)
+        self.assertEqual(mock_resp.readlines.call_count, 2)
+        mock_conn.connect.assert_called_once()
+        mock_conn.close.assert_called_once()
 
     @patch("http.client.HTTPResponse")
     @patch("http.client.HTTPSConnection")

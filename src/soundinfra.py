@@ -119,18 +119,19 @@ class SoundInfraClient():
         else:
             self.conn = conn
 
-    def __exit__(self):
+    def __enter__(self):
+        self.conn.connect()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         self.conn.close()
 
     def _get_base_headers(self):
         return {AUTHORIZATION: f"Bearer {self.token}"}
 
     def _get_manifest_csv(self) -> list[bytes]:
-        try:
-            response = self._do_request(Method.OPTIONS, SLASH)
-            return self._handle_response(response)
-        finally:
-            self.conn.close()
+        response = self._do_request(Method.OPTIONS, SLASH)
+        return self._handle_response(response)
 
     def _do_request(self, method: Method,
                     path=SLASH,
