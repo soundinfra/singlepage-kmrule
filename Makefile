@@ -2,6 +2,10 @@ build: style types test
 
 update_latest:
 	echo `date` > public/latest.txt
+
+update_multiple:
+	echo `date` > public/one.txt
+	echo `date` > public/two.txt
 remove_latest:
 	rm -f public/latest.txt
 
@@ -16,6 +20,8 @@ publish_verbose:
 
 publish_clean:
 	./publish.py --clean --token=`cat .soundinfra_token` kmrule.com
+
+test_multiple: update_multiple publish_verbose
 
 test_put: update_latest publish
 

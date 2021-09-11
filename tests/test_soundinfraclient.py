@@ -65,6 +65,7 @@ class TestSoundInfraClient(unittest.TestCase):
             body=None)
         mock_conn.getresponse.assert_called_once()
         mock_resp.readlines.assert_called_once()
+        mock_resp.close.assert_called_once()
 
     @patch("http.client.HTTPResponse")
     @patch("http.client.HTTPSConnection")
@@ -89,6 +90,7 @@ class TestSoundInfraClient(unittest.TestCase):
 
         self.assertEqual(mock_conn.getresponse.call_count, 2)
         self.assertEqual(mock_resp.readlines.call_count, 2)
+        self.assertEqual(mock_resp.close.call_count, 2)
         mock_conn.connect.assert_called_once()
         mock_conn.close.assert_called_once()
 
@@ -132,6 +134,7 @@ class TestSoundInfraClient(unittest.TestCase):
             body=b'')
         mock_conn.getresponse.assert_called_once()
         mock_resp.readlines.assert_called_once()
+        mock_resp.close.assert_called_once()
         self.assertEqual('hash1', result)
 
     @patch("http.client.HTTPResponse")

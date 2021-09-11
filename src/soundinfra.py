@@ -136,6 +136,9 @@ class SoundInfraClient():
     def _do_request(self, method: Method,
                     path=SLASH,
                     body=None) -> HTTPResponse:
+        body_bytes = len(body) if body else 0
+        logging.debug(f"Making request {method}, {path}. "
+                      f"Body is {body_bytes} bytes long.")
         self.conn.request(method.value, path,
                           headers=self._get_base_headers(),
                           body=body)
@@ -143,7 +146,10 @@ class SoundInfraClient():
 
     def _handle_response(self, response: HTTPResponse) -> list[bytes]:
         if response.status == SUCCESS:
-            return response.readlines()
+            lines = response.readlines()
+            # For some reason calling readlines() does not close the response.
+            response.close()
+            return lines
         else:
             raise RuntimeError(f"Expected {pretty_status(SUCCESS)} but got a "
                                f"{pretty_code(response.status)}")
