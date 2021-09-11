@@ -77,7 +77,8 @@ class TestSoundInfraClient(unittest.TestCase):
         mock_conn.request.assert_called_with(
             "OPTIONS", "/", headers={"Authorization": "Bearer token"},
             body=None)
-        self.assertEqual("Oops, got a 401.", str(context.exception))
+        self.assertEqual("Expected HTTP 200 (OK) but got a HTTP 401 ("
+                         "UNAUTHORIZED)", str(context.exception))
 
     @patch("http.client.HTTPResponse")
     @patch("http.client.HTTPSConnection")

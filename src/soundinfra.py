@@ -8,16 +8,16 @@ from http import HTTPStatus
 from os.path import relpath
 from pathlib import Path
 
+from src.standards import validate_domain_name, pretty_status, pretty_code
 from src.types import FileSet, Method
 
 AUTHORIZATION = "Authorization"
 COMMA = ","
-DOMAIN_MAX_LENGTH = 253
-DOT = "."
 SLASH = "/"
 GLOB_ALL = "*"
 HTTPS = "https"
 READ_BINARY = "rb"
+SUCCESS = HTTPStatus.OK
 TOKEN_MAX_LENGTH = 100
 UTF8 = "utf-8"
 
@@ -66,20 +66,6 @@ def build_manifest(directory: str) -> FileSet:
     manifest = {relpath(path, directory): hash_file(path)
                 for path in sorted(files)}
     return manifest
-
-
-def validate_domain_name(name: str) -> None:
-    if not name:
-        raise ValueError("Domain name cannot be blank.")
-    if len(name) > DOMAIN_MAX_LENGTH:
-        raise ValueError(f"Domain name is too long ({len(name)} chars, " +
-                         f"max is {DOMAIN_MAX_LENGTH}).")
-    if DOT not in name:
-        raise ValueError(f"No Top-Level-Domain found in: \"{name}\".")
-    # Check domain name for (incomplete) list of invalid characters.
-    for char in name:
-        if char in "_!@#$%^&*":
-            raise ValueError(f"Invalid character {char} in domain name.")
 
 
 def parse_line(index: int, line: bytes, separator=COMMA) -> tuple[str, str]:
@@ -142,10 +128,7 @@ class SoundInfraClient():
     def _get_manifest_csv(self) -> list[bytes]:
         try:
             response = self._do_request(Method.OPTIONS, SLASH)
-            if response.status == HTTPStatus.OK:
-                return response.readlines()
-            else:
-                raise RuntimeError(f"Oops, got a {response.status}.")
+            return self._handle_response(response)
         finally:
             self.conn.close()
 
@@ -156,6 +139,13 @@ class SoundInfraClient():
                           headers=self._get_base_headers(),
                           body=body)
         return self.conn.getresponse()
+
+    def _handle_response(self, response: HTTPResponse) -> list[bytes]:
+        if response.status == SUCCESS:
+            return response.readlines()
+        else:
+            raise RuntimeError(f"Expected {pretty_status(SUCCESS)} but got a "
+                               f"{pretty_code(response.status)}")
 
     def get_manifest(self) -> FileSet:
         return parse_csv(self._get_manifest_csv())
@@ -169,29 +159,19 @@ class SoundInfraClient():
         with open(local_path, READ_BINARY) as content:
             response = self._do_request(Method.PUT, remote_path,
                                         body=content.read())
-            content.readlines()
-            if response.status == HTTPStatus.OK:
-                # Return hash so it can be checked.
-                parsed = parse_csv(response.readlines(), separator=SLASH)
-                if len(parsed) == 1:
-                    return parsed[name]
-                else:
-                    raise RuntimeError(
-                        f"Response should be one line! {parsed}.")
+            lines = self._handle_response(response)
+            parsed = parse_csv(lines, separator=SLASH)
+            if len(parsed) == 1:
+                return parsed[name]
             else:
-                logging.warning(f"Failed HTTP response: {response}.")
-                raise RuntimeError(f"HTTP response code: ({response.status}).")
+                raise RuntimeError(
+                    f"Response should be one line! {parsed}.")
 
     def delete(self, name: str) -> None:
         remote_path = SLASH + name
         response = self._do_request(Method.DELETE, remote_path)
-        if response.status == HTTPStatus.OK:
-            logging.info(f"Successfully deleted {name}.")
-            response_body = response.read()
-            if response_body:
-                decoded = response_body.decode(UTF8)
-                raise RuntimeError("Response body should be empty, " +
-                                   f"not: {decoded}.")
-        else:
-            logging.warning(f"Failed HTTP response: {response}.")
-            raise RuntimeError(f"HTTP response code: ({response.status}).")
+        lines = self._handle_response(response)
+        if lines:
+            decoded = "\n".join([line.decode(UTF8) for line in lines])
+            raise RuntimeError("Response body should be empty, " +
+                               f"not: {decoded}.")
