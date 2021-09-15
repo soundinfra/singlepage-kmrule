@@ -7,6 +7,7 @@ from http.client import HTTPSConnection, HTTPResponse
 from http import HTTPStatus
 from os.path import relpath
 from pathlib import Path
+from typing import Optional
 
 from src.standards import validate_domain_name, pretty_status, pretty_code
 from src.types import FileSet, Method
@@ -110,7 +111,8 @@ def validate_token(token: str) -> None:
 
 class SoundInfraClient():
 
-    def __init__(self, site: str, token: str, conn: HTTPSConnection = None):
+    def __init__(self, site: str, token: str,
+                 conn: Optional[HTTPSConnection] = None):
         validate_domain_name(site)
         validate_token(token)
         self.token = token
@@ -134,8 +136,8 @@ class SoundInfraClient():
         return self._handle_response(response)
 
     def _do_request(self, method: Method,
-                    path=SLASH,
-                    body=None) -> HTTPResponse:
+                    path: str = SLASH,
+                    body: Optional[bytes] = None) -> HTTPResponse:
         body_bytes = len(body) if body else 0
         logging.debug(f"Making request {method}, {path}. "
                       f"Body is {body_bytes} bytes long.")
