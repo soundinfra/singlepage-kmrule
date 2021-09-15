@@ -27,7 +27,7 @@ class TestPublish(unittest.TestCase):
         self.assertEqual(args.directory, publish.PUBLISH_DIR)
         self.assertFalse(args.clean)
 
-    @patch.dict("os.environ", {})
+    @patch.dict("os.environ", {}, clear=True)
     def test_no_token_env_var(self):
         # Given
         domain = "example.com"
@@ -36,6 +36,18 @@ class TestPublish(unittest.TestCase):
             publish.setup([domain])
         # Then
         self.assertEqual("SoundInfra token SOUNDINFRA_TOKEN is not set.",
+                         str(context.exception))
+
+    @patch.dict("os.environ", {src.publish.TOKEN_ENV_VAR: ""}, clear=True)
+    def test_blank_token_env_var(self):
+        # Given
+        domain = "example.com"
+        # When
+        with self.assertRaises(ValueError) as context:
+            publish.setup([domain])
+        # Then
+        self.assertEqual("SoundInfra token SOUNDINFRA_TOKEN is not a valid "
+                         "string.",
                          str(context.exception))
 
     def test_override_token(self):

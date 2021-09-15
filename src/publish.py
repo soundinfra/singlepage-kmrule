@@ -12,7 +12,12 @@ TOKEN_ENV_VAR = "SOUNDINFRA_TOKEN"
 
 def token_from_env() -> str:
     if TOKEN_ENV_VAR in os.environ:
-        return os.environ[TOKEN_ENV_VAR]
+        token = os.environ[TOKEN_ENV_VAR]
+        if token:
+            return token
+        else:
+            raise ValueError(
+                f"SoundInfra token {TOKEN_ENV_VAR} is not a valid string.")
     else:
         raise ValueError(f"SoundInfra token {TOKEN_ENV_VAR} is not set.")
 
@@ -77,6 +82,20 @@ def setup(argv):
                        token=args.token if args.token else token_from_env())
 
 
+def verify_clean(file_count: int, domain: str):
+    logging.warning(
+        f"About to clean {file_count} files from {domain}.")
+    answer = input(
+        "Are you sure you want to continue? y/N yes/NO\n").lower()
+    if answer == 'y' or answer == "yes":
+        logging.warning(
+            f"OK, cleaning {file_count} files from {domain}.")
+        return True
+    else:
+        logging.warning("Cleaning canceled. No worries, have a nice day!")
+        return False
+
+
 def clean(args: PublishArgs):
     logging.warning(f"Cleaning {args.domain} based on contents of "
                     f"'{args.directory}.")
@@ -84,18 +103,23 @@ def clean(args: PublishArgs):
         local_files = build_manifest(args.directory)
         remote_files = client.get_manifest()
         diff = clean_files(local_files, remote_files)
-        logging.warning(
-            f"About to clean {len(diff)} files from {args.domain}.")
-        answer = input(
-            "Are you sure you want to continue? y/N yes/NO\n").lower()
-        if answer == 'y' or answer == "yes":
-            logging.warning(
-                f"OK, cleaning {len(diff)} files from {args.domain}.")
+        if verify_clean(len(diff), args.domain):
             for name in diff:
                 logging.warning(f"Deleting {name} from {args.domain}.")
                 client.delete(name)
-        else:
-            logging.warning("Cleaning canceled. No worries, have a nice day!")
+
+
+def publish_file(client: SoundInfraClient,
+                 name: str,
+                 directory: str,
+                 hash: str):
+    returned_hash = client.put(directory, name)
+    if hashes_match(name, hash, returned_hash):
+        logging.debug(f"Successfully published {name}.")
+    else:
+        raise RuntimeError(
+            f"Aborting due to failed hash mismatch for {name}!!! (local"
+            f" {hash}, returned: {returned_hash}).")
 
 
 # Publishes contents of publish_dir.
@@ -113,11 +137,7 @@ def publish(args: PublishArgs):
                      "updated) files.")
         for name, hash in diff.items():
             logging.debug(f"Publishing: {name} ({hash[:5]}...)")
-            if not args.dryrun:
-                returned_hash = client.put(args.directory, name)
-                if hashes_match(name, hash, returned_hash):
-                    logging.debug(f"Successfully published {name}.")
-                else:
-                    logging.warning(
-                        f"Failed hash mismatch for {name}!!! (local {hash}, "
-                        f"returned: {returned_hash}).")
+            if args.dryrun:
+                logging.debug(f"[Dryrun] Successfully published {name}.")
+            else:
+                publish_file(client, name, args.directory, hash)
