@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 
 from src import soundinfra as si
 
@@ -50,3 +51,16 @@ class TestSoundInfra(unittest.TestCase):
         self.assertEqual("Error: Decode error on line 1 ('utf-8' codec " +
                          "can't decode byte 0xfc in position 2: invalid " +
                          "start byte).", str(context.exception))
+
+    def test_build_manifest(self):
+        # Given
+        directory = "public"
+        self.assertTrue(Path(directory).exists())
+
+        # When
+        manifest = si.build_manifest(directory)
+
+        # Then
+        self.assertGreater(len(manifest), 1)
+        for name, hash in manifest.items():
+            self.assertEqual(32, len(hash))

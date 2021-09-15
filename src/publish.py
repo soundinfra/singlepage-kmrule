@@ -118,8 +118,8 @@ def publish_file(client: SoundInfraClient,
         logging.debug(f"Successfully published {name}.")
     else:
         raise RuntimeError(
-            f"Aborting due to failed hash mismatch for {name}!!! (local"
-            f" {hash}, returned: {returned_hash}).")
+            f"Aborting due to failed hash mismatch for '{name}'!!! (local"
+            f" '{hash}', returned: '{returned_hash}').")
 
 
 # Publishes contents of publish_dir.

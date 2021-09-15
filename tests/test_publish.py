@@ -95,3 +95,40 @@ class TestPublish(unittest.TestCase):
         # Also
         self.assertEqual(args.domain, domain)
         self.assertEqual(args.directory, publish.PUBLISH_DIR)
+
+    # Given
+    @patch("builtins.input", return_value="foo")
+    def test_verify_clean_no(self, mock_input):
+        # When / Then
+        self.assertFalse(publish.verify_clean(3, "foo"))
+
+    # Given
+    @patch("builtins.input", return_value="yes")
+    def test_verify_clean_yes(self, mock_input):
+        # When / Then
+        self.assertTrue(publish.verify_clean(3, "foo"))
+
+    @patch("src.soundinfra.SoundInfraClient")
+    def test_publish_file_success(self, mock_client):
+        # Given
+        hash = "1234"
+        mock_client.put.return_value = hash
+
+        # When
+        publish.publish_file(mock_client, "some.file", "somedir", hash)
+
+    @patch("src.soundinfra.SoundInfraClient")
+    def test_publish_file_failure(self, mock_client):
+        # Given
+        hash = "1234"
+        mock_client.put.return_value = "1234 "
+
+        # When
+        with self.assertRaises(RuntimeError) as context:
+            publish.publish_file(mock_client, "some.file", "somedir", hash)
+
+        # Then
+        self.assertEqual(
+            str(context.exception),
+            "Aborting due to failed hash mismatch for 'some.file'!!! "
+            "(local '1234', returned: '1234 ').")
