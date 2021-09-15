@@ -28,7 +28,9 @@ test_put: update_latest publish
 test_clean: update_latest publish remove_latest publish_clean
 
 test:
-	python3 -m unittest discover
+	coverage run -m unittest discover
+	coverage html
+	coverage report --fail-under=90
 
 types:
 	mypy src tests

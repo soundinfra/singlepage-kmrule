@@ -1,6 +1,10 @@
 # Python
 **/*.pyc
 
+# Build output
+htmlcov/*
+.coverage
+
 # IntelliJ
 .idea
 **/*.iml
@@ -11,3 +15,4 @@
 # Test files
 public/*.txt
 tmp/*
+
