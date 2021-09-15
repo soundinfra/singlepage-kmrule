@@ -7,3 +7,7 @@
 
 # Sound//Infra
 .soundinfra_token
+
+# Test files
+public/*.txt
+tmp/*
