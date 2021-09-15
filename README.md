@@ -12,7 +12,12 @@ a [URL](https://en.wikipedia.org/wiki/URL), or web address,
 like `https://kmrule.com/index.html`. When you click on a link in your browser,
 you get taken to a URL.
 
-# Add or update a resource
+This repository demonstrates two ways to add or update resources:
+
+1. Using the command line.
+2. Using the included Python script.
+
+# Add or update a resource using the command line
 To upload, or publish a resource to your domain, you just need to do a
 HTTP `PUT` request. One way to do this is with the `curl` command, which is
 installed on most systems:
