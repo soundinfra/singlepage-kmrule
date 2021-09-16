@@ -64,3 +64,13 @@ class TestSoundInfra(unittest.TestCase):
         self.assertGreater(len(manifest), 1)
         for name, hash in manifest.items():
             self.assertEqual(32, len(hash))
+
+    def test_hash_file(self):
+        # Given
+        path = Path("public/index.html")
+
+        # When
+        hash, handle = si.hash_file(path)
+
+        # Then
+        self.assertTrue(handle.closed)

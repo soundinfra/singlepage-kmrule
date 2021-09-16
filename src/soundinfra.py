@@ -7,7 +7,7 @@ from http.client import HTTPSConnection, HTTPResponse
 from http import HTTPStatus
 from os.path import relpath
 from pathlib import Path
-from typing import Optional
+from typing import Optional, IO, Any
 
 from src.standards import validate_domain_name, pretty_status, pretty_code
 from src.types import FileSet, Method
@@ -23,7 +23,7 @@ TOKEN_MAX_LENGTH = 100
 UTF8 = "utf-8"
 
 
-def hash_file(path: Path) -> str:
+def hash_file(path: Path) -> tuple[str, IO[Any]]:
     '''
         Hash a local file the same way Sound//Infra does for the manifest CSV.
 
@@ -32,8 +32,9 @@ def hash_file(path: Path) -> str:
     '''
     #
     md5 = hashlib.md5()
-    md5.update(open(path, READ_BINARY).read())
-    return md5.hexdigest()
+    with open(path, READ_BINARY) as handle:
+        md5.update(handle.read())
+        return md5.hexdigest(), handle
 
 
 def build_manifest(directory: str) -> FileSet:
@@ -64,7 +65,7 @@ def build_manifest(directory: str) -> FileSet:
     '''
     files = [path for path in Path(directory).rglob(GLOB_ALL)
              if path.is_file()]
-    manifest = {relpath(path, directory): hash_file(path)
+    manifest = {relpath(path, directory): hash_file(path)[0]
                 for path in sorted(files)}
     return manifest
 
