@@ -1,3 +1,4 @@
+import logging
 import unittest
 from unittest.mock import patch
 
@@ -7,6 +8,10 @@ from src.publish import PublishArgs
 
 
 class TestPublish(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        logging.basicConfig(level=logging.ERROR)
 
     def test_no_args_exit_code_2(self):
         with self.assertRaises(SystemExit) as context:
