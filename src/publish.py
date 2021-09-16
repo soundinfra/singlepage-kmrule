@@ -96,6 +96,16 @@ def verify_clean(file_count: int, domain: str):
         return False
 
 
+def do_clean(client: SoundInfraClient, args: PublishArgs, diff: list[str]):
+    for name in diff:
+        logging.warning(f"Deleting {name} from {args.domain}.")
+        if args.dryrun:
+            logging.info(f"[dryrun] Deleted {name}.")
+        else:
+            client.delete(name)
+            logging.info(f"Deleted {name} from {args.domain}.")
+
+
 def clean(args: PublishArgs):
     logging.warning(f"Cleaning {args.domain} based on contents of "
                     f"'{args.directory}.")
@@ -104,9 +114,7 @@ def clean(args: PublishArgs):
         remote_files = client.get_manifest()
         diff = clean_files(local_files, remote_files)
         if verify_clean(len(diff), args.domain):
-            for name in diff:
-                logging.warning(f"Deleting {name} from {args.domain}.")
-                client.delete(name)
+            do_clean(client, args, diff)
 
 
 def publish_file(client: SoundInfraClient,
@@ -122,6 +130,15 @@ def publish_file(client: SoundInfraClient,
             f" '{hash}', returned: '{returned_hash}').")
 
 
+def do_publish(client: SoundInfraClient, args: PublishArgs, diff: FileSet):
+    for name, hash in diff.items():
+        logging.debug(f"Publishing: {name} ({hash[:5]}...)")
+        if args.dryrun:
+            logging.debug(f"[Dryrun] Published {name}.")
+        else:
+            publish_file(client, name, args.directory, hash)
+
+
 # Publishes contents of publish_dir.
 # Skips files that have already been published (based on hash).
 # Will not delete any files from remote, use clean operation for that.
@@ -135,9 +152,4 @@ def publish(args: PublishArgs):
         logging.info(f"Publish diff summary: ({len(local_files)},"
                      f" {len(remote_files)}, {len(diff)}) (local, remote, "
                      "updated) files.")
-        for name, hash in diff.items():
-            logging.debug(f"Publishing: {name} ({hash[:5]}...)")
-            if args.dryrun:
-                logging.debug(f"[Dryrun] Successfully published {name}.")
-            else:
-                publish_file(client, name, args.directory, hash)
+        do_publish(client, args, diff)

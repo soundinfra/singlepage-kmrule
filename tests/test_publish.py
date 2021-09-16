@@ -137,3 +137,15 @@ class TestPublish(unittest.TestCase):
             str(context.exception),
             "Aborting due to failed hash mismatch for 'some.file'!!! "
             "(local '1234', returned: '1234 ').")
+
+    @patch("src.soundinfra.SoundInfraClient")
+    def test_clean_dryrun(self, mock_client):
+        # Given
+        args = PublishArgs(domain="example.com",
+                           directory="foo",
+                           token="token")  # Defaults to dryrun=True
+
+        publish.do_clean(mock_client, args, ["one", "two"])
+
+        # Then
+        mock_client.delete.assert_not_called()
